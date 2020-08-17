@@ -12,12 +12,57 @@ const examQueryValidator = Joi.object({
 
 const postExamRequestValidator = Joi.object({
     title: Joi.string().max(50).required(),
+    notice: Joi.string().max(50).required(),
     courseName: Joi.string().max(50).required(),
     courseCode: Joi.string().max(50).required(),
     startTime: Joi.string().isoDate().required(),
-    endTime: Joi.string().isoDate().required()
-})
+    endTime: Joi.string().isoDate().required(),
+    qnas: Joi.array().items(Joi.object({
+        question: Joi.string().max(150).required(),
+        answer: Joi.string().max(50).required(),
+        type: Joi.string().valid("CHOICE", "SHORT_ANSWER").required(),
+        choices: Joi.array().items(Joi.object({
+            content: Joi.string().max(50).required(),
+            order: Joi.number().integer().required()
+        }))
+    })).required()
+});
+
 module.exports = (router) => {
+    router.get("/exams/:examId", authorize, async function(req, res, next) {
+        try {
+            const examId = req.params.examId;
+            const userId = res.locals.userId;
+
+            const examAccessControl = await db.examAccessControls.findOrCreate({
+                where: {
+                    examId,
+                    applyeeId: userId
+                }
+            });
+
+            if(!examAccessControl.isAccepted) res.status(403).json({ message: "User is not Accepted" });
+
+            await db.exams.findOne({
+                where: { id: examId },
+                include: [ { model: db.users, as: "owner" } ]
+            });
+
+            const { owner, ...rest } = exam.dataValues;
+
+            res.status(201).json({
+                ...rest,
+                owner: {
+                    id: owner.id,
+                    name: owner.name,
+                    major: owner.major
+                }
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
     router.get("/exams", authorize, async function(req, res, next) {
         try {
             const { value, error } = examQueryValidator.validate(req.query);
@@ -77,7 +122,7 @@ module.exports = (router) => {
                     name: owner.name,
                     major: owner.major
                 }
-            })
+            });
         } catch(err) {
             next(err);
         }

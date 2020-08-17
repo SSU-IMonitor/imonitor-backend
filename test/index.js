@@ -103,10 +103,45 @@ describe("post exam", function() {
 
         const postExamRequest = {
             "title": "시험",
+            "notice": "공지",
             "courseName": "과목",
             "courseCode": "123123",
             "startTime": "2020-08-16T08:00:00",
-            "endTime": "2020-08-16T10:00:00"
+            "endTime": "2020-08-16T10:00:00",
+            "qnas": [
+                {
+                    "question": "문제1",
+                    "answer": "2",
+                    "type": "CHOICE",
+                    "choices": [
+                        {
+                            "content": "답1",
+                            "order": 1
+                        },
+                        {
+                            "content": "답2",
+                            "order": 2
+                        },
+                        {
+                            "content": "답3",
+                            "order": 3
+                        },
+                        {
+                            "content": "답4",
+                            "order": 4
+                        },
+                        {
+                            "content": "답5",
+                            "order": 5
+                        }
+                    ]
+                },
+                {
+                    "question": "문제2",
+                    "answer": "정답2",
+                    "type": "SHORT_ANSWER"
+                }
+            ]
         };
 
         const res = await postExam(signInResponse, postExamRequest);
@@ -138,10 +173,45 @@ describe("get exams", function() {
 
         const postExamRequest = {
             "title": "시험",
+            "notice": "공지",
             "courseName": "과목",
             "courseCode": "123123",
             "startTime": "2020-08-16T08:00:00",
-            "endTime": "2020-08-16T10:00:00"
+            "endTime": "2020-08-16T10:00:00",
+            "qnas": [
+                {
+                    "question": "문제1",
+                    "answer": "2",
+                    "type": "CHOICE",
+                    "choices": [
+                        {
+                            "content": "답1",
+                            "order": 1
+                        },
+                        {
+                            "content": "답2",
+                            "order": 2
+                        },
+                        {
+                            "content": "답3",
+                            "order": 3
+                        },
+                        {
+                            "content": "답4",
+                            "order": 4
+                        },
+                        {
+                            "content": "답5",
+                            "order": 5
+                        }
+                    ]
+                },
+                {
+                    "question": "문제2",
+                    "answer": "정답2",
+                    "type": "SHORT_ANSWER"
+                }
+            ]
         };
 
         await postExam(signInResponse, postExamRequest);
