@@ -6,6 +6,9 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+const db = require("./models");
+db.sequelize.sync();
+
 app.use(function(req, res) {
     res.status(404).json({ message: "Not Found Error" });
 });
