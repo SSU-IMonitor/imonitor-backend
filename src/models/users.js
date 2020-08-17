@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
     const tableName = "users";
 
     const Users = sequelize.define(modelName, {
-        id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+        id: { type: DataTypes.STRING("8"), primaryKey: true, allowNull: false },
         name: { type: DataTypes.STRING(64), allowNull: false },
         password: { type: DataTypes.STRING(64), allowNull: false },
         major: { type: DataTypes.STRING(64), allowNull: false },
