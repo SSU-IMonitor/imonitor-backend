@@ -892,9 +892,21 @@ components:
         answer:
           type: string
           description: 답
+        choices:
+          type: array
+          description: 선택지
+          items:
+            $ref: '#/components/schemas/NewAnswerChoiceForm'
+        type:
+          type: string
+          enum:
+            - CHOICE
+            - SHORT_ANSWER
+          description: 객관식 vs 주관식
       required:
         - question
         - answer
+        - type
     QuestionInfo:
       title: QuestionInfo
       type: object
@@ -1003,7 +1015,7 @@ components:
           type: array
           description: 객관식 선택지
           items:
-            $ref: ''
+            $ref: '#/components/schemas/AnswerChoiceInfo'
       required:
         - id
         - question
@@ -1026,3 +1038,13 @@ components:
         - id
         - content
         - order
+    NewAnswerChoiceForm:
+      title: NewAnswerChoiceForm
+      type: object
+      properties:
+        content:
+          type: string
+          description: 객관식 선택지 내용
+        order:
+          type: integer
+          description: 보기 순서
