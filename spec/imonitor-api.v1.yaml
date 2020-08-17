@@ -778,9 +778,10 @@ components:
     SimplifiedExamInfo:
       title: SimplifiedExamInfo
       type: object
+      description: ''
       properties:
         id:
-          type: string
+          type: integer
         owner:
           $ref: '#/components/schemas/UserInfo'
         title:
@@ -791,10 +792,10 @@ components:
           type: string
         startTime:
           type: string
-          format: time
+          format: date-time
         endTime:
           type: string
-          format: time
+          format: date-time
       required:
         - id
         - owner

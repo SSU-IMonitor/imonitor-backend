@@ -2,6 +2,14 @@ const authorize = require("../../middleware/authorize");
 const Joi = require("joi");
 const db = require("../../../models");
 
+const examQueryValidator = Joi.object({
+    courseCode: Joi.string().max(50),
+    courseName: Joi.string().max(50),
+    limit: Joi.number().integer(),
+    offset: Joi.number().integer(),
+    title: Joi.string().max(50)
+});
+
 const postExamRequestValidator = Joi.object({
     title: Joi.string().max(50).required(),
     courseName: Joi.string().max(50).required(),
@@ -10,6 +18,33 @@ const postExamRequestValidator = Joi.object({
     endTime: Joi.string().isoDate().required()
 })
 module.exports = (router) => {
+    router.get("/exams", authorize, async function(req, res, next) {
+        try {
+            const { value, error } = examQueryValidator.validate(req.query);
+            if(error) throw error;
+
+            const { limit, offset, ...query } = value;
+
+            const exams = await db.exams.findAll({
+                where: query,
+                limit,
+                offset,
+                include: [ { model: db.users, as: "owner" } ]
+            });
+
+            res.status(200).json({
+                exams: exams.map(exam => {
+                    delete exam.dataValues.ownerId;
+                    delete exam.dataValues.owner.dataValues.password;
+                    delete exam.dataValues.owner.dataValues.role;
+                    return exam;
+                })
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
     router.post("/exams", authorize, async function(req, res, next) {
         try {
             const {value, error} = postExamRequestValidator.validate(req.body);

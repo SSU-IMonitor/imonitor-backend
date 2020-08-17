@@ -28,6 +28,14 @@ async function postExam(signInResponse, request) {
         .set("Authorization", `${signInResponse.body.tokenType} ${signInResponse.body.accessToken}`)
         .send(request);
 }
+
+async function getExams(signInResponse, query) {
+    return chai.request(app)
+        .get("/v1/exams")
+        .set("Authorization", `${signInResponse.body.tokenType} ${signInResponse.body.accessToken}`)
+        .query(query);
+}
+
 describe("sign up", function() {
     before(async function() {
         await db.sequelize.sync({ force: true });
@@ -106,4 +114,41 @@ describe("post exam", function() {
         expect(res.status).to.equal(201);
         expect(res).to.satisfyApiSpec;
     });
-})
+});
+
+describe("get exams", function() {
+    before(async function() {
+        await db.sequelize.sync({ force: true });
+    });
+
+    it("should success", async function() {
+        const signUpRequest = {
+            id: "20202020",
+            name: "홍길동",
+            password: "password",
+            major: "소프트웨어학과"
+        };
+
+        await signUp(signUpRequest);
+
+        const signInResponse = await signIn({
+            id: signUpRequest.id,
+            password: signUpRequest.password
+        });
+
+        const postExamRequest = {
+            "title": "시험",
+            "courseName": "과목",
+            "courseCode": "123123",
+            "startTime": "2020-08-16T08:00:00",
+            "endTime": "2020-08-16T10:00:00"
+        };
+
+        await postExam(signInResponse, postExamRequest);
+
+        const res = await getExams(signInResponse, {});
+
+        expect(res.status).to.equal(200);
+        expect(res).to.satisfyApiSpec;
+    });
+});
