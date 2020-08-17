@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
         courseCode: { type: DataTypes.STRING(50), allowNull: false },
         startTime: { type: DataTypes.DATE, allowNull: false },
         endTime: { type: DataTypes.DATE, allowNull: false }
-    })
+    }, { tableName, timestamps: false });
 
     Exams.associate = function(db) {
         db.exams.belongsTo(db.users, { foreignKey: "ownerId", as: "owner" })
