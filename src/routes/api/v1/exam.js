@@ -74,6 +74,7 @@ module.exports = (router) => {
                 where: query,
                 limit,
                 offset,
+		order: [["startTime", "ASC"]],
                 include: [ { model: db.users, as: "owner" } ]
             });
 
