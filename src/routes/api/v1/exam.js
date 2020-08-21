@@ -106,6 +106,20 @@ module.exports = (router) => {
                     ownerId: userId
                 }, { transaction: t });
 
+                await Promise.all(value.qnas.map(async qna => {
+                    const _qna = await db.qnas.create({
+                        ...qna,
+                        examId: _exam.id
+                    }, { transaction: t })
+
+                    if(qna.choices) {
+                        await Promise.all(qna.choices.map(async choice => await db.answerChoices.create({
+                            ...choice,
+                            qnaId: _qna.id
+                        }, { transaction: t })));
+                    }
+                }));
+
                 return _exam.id;
             });
 

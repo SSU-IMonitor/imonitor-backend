@@ -11,7 +11,8 @@ module.exports = (sequelize, DataTypes) => {
 
     Qnas.associate = function(db) {
         db.qnas.belongsTo(db.exams, { foreignKey: "examId", as: "exam", onDelete: "cascade", onUpdate: "cascade" });
-        db.qnas.hasMany(db.answerChoices, { foreignKey: "qnaId", as: "qna", onDelete: "cascade", onUpdate: "cascade" });
+        db.qnas.hasMany(db.answerChoices, { foreignKey: "qnaId", as: "choices", onDelete: "cascade", onUpdate: "cascade" });
+        db.qnas.hasMany(db.submits, { foreignKey: "qnaId", as: "submits", onDelete: "cascade", onUpdate: "cascade" });
     }
 
     return Qnas;

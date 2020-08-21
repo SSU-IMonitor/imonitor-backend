@@ -8,7 +8,8 @@ module.exports = (sequelize, DataTypes) => {
     }, { tableName, timestamp: false });
 
     Submits.associate = function(db) {
-        db.submits.hasOne(db.qnas, { foreignKey: "qnaId", as: "qna", onDelete: "cascade", onUpdate: "cascade" });
+        db.submits.belongsTo(db.qnas, { foreignKey: "qnaId", as: "qna", onDelete: "cascade", onUpdate: "cascade" });
+        db.submits.belongsTo(db.users, { foreignKey: "applyeeId", as: "applyee", onDelete: "cascade", onUpdate: "cascade" });
     }
 
     return Submits;
