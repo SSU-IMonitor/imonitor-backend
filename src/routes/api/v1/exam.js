@@ -102,30 +102,35 @@ module.exports = (router) => {
 
             const { limit, offset, search, time, direction } = value;
 
+            let searchOption;
+            if(search !== undefined) searchOption = {
+                [Op.or]: [
+                    {
+                        title: {
+                            [Op.like]: `%${search}%`
+                        }
+                    },
+                    {
+                        courseName: {
+                            [Op.like]: `%${search}%`
+                        },
+                    }   ,
+                    {
+                        courseCode: {
+                            [Op.like]: `%${search}%`
+                        }
+                    },
+                    {
+                        "$owner.name$": {
+                            [Op.like]: `%${search}%`
+                        }
+                    }
+                ]
+            }
+
             const exams = await db.exams.findAll({
                 where: {
-                    [Op.or]: [
-                        {
-                            title: {
-                                [Op.like]: `%${search}%`
-                            }
-                        },
-                        {
-                            courseName: {
-                                [Op.like]: `%${search}%`
-                            },
-                        }   ,
-                        {
-                            courseCode: {
-                                [Op.like]: `%${search}%`
-                            }
-                        },
-                        {
-                            "$owner.name$": {
-                                [Op.like]: `%${search}%`
-                            }
-                        }
-                    ],
+                    searchOption,
                     startTime: {
                         [Op.gte]: time || "1900-01-01T00:00:00"
                     }
