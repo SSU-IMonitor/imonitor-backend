@@ -6,7 +6,7 @@ module.exports = (sequelize, DataTypes) => {
         id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
         order: { type: DataTypes.INTEGER, allowNull: false },
         content: { type: DataTypes.STRING(50), allowNull: false }
-    });
+    }, { tableName, timestamps: false});
 
     return AnswerChoices;
 }
