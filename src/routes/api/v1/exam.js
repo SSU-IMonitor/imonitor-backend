@@ -130,7 +130,7 @@ module.exports = (router) => {
 
             const exams = await db.exams.findAll({
                 where: {
-                    searchOption,
+                    ...searchOption,
                     startTime: {
                         [Op.gte]: time || "1900-01-01T00:00:00"
                     }
