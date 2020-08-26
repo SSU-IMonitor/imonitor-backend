@@ -1,13 +1,12 @@
 const authorize = require("../../middleware/authorize");
 const Joi = require("joi");
 const db = require("../../../models");
+const { Op } = require("sequelize");
 
 const examQueryValidator = Joi.object({
-    courseCode: Joi.string().max(50),
-    courseName: Joi.string().max(50),
+    search: Joi.string().max(50),
     limit: Joi.number().integer(),
     offset: Joi.number().integer(),
-    title: Joi.string().max(50)
 });
 
 const postExamRequestValidator = Joi.object({
@@ -68,13 +67,44 @@ module.exports = (router) => {
             const { value, error } = examQueryValidator.validate(req.query);
             if(error) throw error;
 
-            const { limit, offset, ...query } = value;
+            const { limit, offset, search } = value;
 
             const exams = await db.exams.findAll({
-                where: query,
+                where: {
+                    [Op.or]: [
+                        {
+                            title: {
+                                [Op.like]: `%${search}%`
+                            }
+                        },
+                        {
+                            courseName: {
+                                [Op.like]: `%${search}%`
+                            },
+                        }   ,
+                        {
+                            courseCode: {
+                                [Op.like]: `%${search}%`
+                            }
+                        },
+                        {
+                            "$owner.name$": {
+                                [Op.like]: `%${search}%`
+                            }
+                        }
+                    ]
+                },
                 limit,
                 offset,
-                include: [ { model: db.users, as: "owner" } ]
+                include: [ {
+                    model: db.users,
+                    as: "owner",
+                    // where: {
+                    //     name: {
+                    //         [Op.like]: `%${search}%`
+                    //     }
+                    // }
+                } ]
             });
 
             res.status(200).json({
