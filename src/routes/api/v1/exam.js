@@ -5,6 +5,8 @@ const { Op } = require("sequelize");
 
 const examQueryValidator = Joi.object({
     search: Joi.string().max(50),
+    time: Joi.string(),
+    direction: Joi.string().valid("DESC", "ASC"),
     limit: Joi.number().integer(),
     offset: Joi.number().integer(),
 });
@@ -67,7 +69,7 @@ module.exports = (router) => {
             const { value, error } = examQueryValidator.validate(req.query);
             if(error) throw error;
 
-            const { limit, offset, search } = value;
+            const { limit, offset, search, time, direction } = value;
 
             const exams = await db.exams.findAll({
                 where: {
@@ -92,19 +94,15 @@ module.exports = (router) => {
                                 [Op.like]: `%${search}%`
                             }
                         }
-                    ]
+                    ],
+                    startTime: {
+                        [Op.gte]: time || "1900-01-01T00:00:00"
+                    }
                 },
                 limit,
                 offset,
-                include: [ {
-                    model: db.users,
-                    as: "owner",
-                    // where: {
-                    //     name: {
-                    //         [Op.like]: `%${search}%`
-                    //     }
-                    // }
-                } ]
+        		order: [["startTime", direction || "ASC"]],
+                include: [ { model: db.users, as: "owner" } ]
             });
 
             res.status(200).json({
@@ -134,6 +132,20 @@ module.exports = (router) => {
                     ...value,
                     ownerId: userId
                 }, { transaction: t });
+
+                await Promise.all(value.qnas.map(async qna => {
+                    const _qna = await db.qnas.create({
+                        ...qna,
+                        examId: _exam.id
+                    }, { transaction: t })
+
+                    if(qna.choices) {
+                        await Promise.all(qna.choices.map(async choice => await db.answerChoices.create({
+                            ...choice,
+                            qnaId: _qna.id
+                        }, { transaction: t })));
+                    }
+                }));
 
                 return _exam.id;
             });
