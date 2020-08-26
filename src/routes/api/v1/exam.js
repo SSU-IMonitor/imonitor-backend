@@ -29,11 +29,29 @@ const postExamRequestValidator = Joi.object({
     })).required()
 });
 
+const putExamAccessControlRequestValidator = Joi.object({
+    studentId: Joi.number().integer(),
+    accessControl: Joi.string().valid("ACCEPTED", "UNACCEPTED", "BANNED")
+});
+
 module.exports = (router) => {
     router.get("/exams/:examId", authorize, async function(req, res, next) {
         try {
             const examId = req.params.examId;
             const userId = res.locals.userId;
+
+            const exam = await db.exams.findOne({
+                where: { id: examId },
+                include: [
+                    { model: db.users, as: "owner" },
+                    {
+                        model: db.qnas,
+                        include: [{ model: db.answerChoices, as: "choices" }]
+                    }
+                ]
+            });
+
+            if(exam === null) res.status(404).json({ messge: "exam not found" });
 
             const examAccessControl = await db.examAccessControls.findOrCreate({
                 where: {
@@ -42,22 +60,35 @@ module.exports = (router) => {
                 }
             });
 
-            if(!examAccessControl.isAccepted) res.status(403).json({ message: "User is not Accepted" });
+            if(exam.owner.id !== userId && !examAccessControl.accessControl === "ACCEPTED") res.status(403).json({ message: "User is not Accepted" });
 
-            await db.exams.findOne({
-                where: { id: examId },
-                include: [ { model: db.users, as: "owner" } ]
-            });
-
-            const { owner, ...rest } = exam.dataValues;
-
-            res.status(201).json({
-                ...rest,
+            res.status(200).json({
+                id: exam.id,
                 owner: {
-                    id: owner.id,
-                    name: owner.name,
-                    major: owner.major
-                }
+                    id: exam.owner.id,
+                    name: exam.owner.name,
+                    major: exam.owner.major
+                },
+                title: exam.title,
+                notice: exam.notice,
+                courseName: exam.courseName,
+                courseCode: exam.courseCode,
+                startTime: exam.startTime,
+                endTime: exam.endTime,
+                questions: exam.qnas.map(qna => {
+                    return {
+                        id: qna.id,
+                        question: qna.question,
+                        type: qna.type,
+                        choices: qna.choices.map(choice => {
+                            return {
+                                id: choice.id,
+                                order: choice.order,
+                                content: choice.content
+                            }
+                        })
+                    }
+                })
             });
         } catch (err) {
             next(err);
@@ -169,4 +200,45 @@ module.exports = (router) => {
             next(err);
         }
     });
+
+    router.put("/exams/:examId/access-control", authorize, async function(req, res, next) {
+        try {
+            const examId = req.params.examId;
+            const userId = res.locals.userId;
+
+            const exam = await db.exams.findOne({
+                where: {
+                    id: examId
+                },
+                include: [ { model: db.users, as: "owner" } ]
+            });
+
+            if(exam === null) res.status(404).json({ message: "exam not found" });
+            if(exam.owner.id !== userId) res.status(403).json({ message: "user is not owner of exam" });
+
+            const { error, value } = putExamAccessControlRequestValidator.validate(req.body);
+            if(error) throw error;
+
+            const student = await db.users.findByPk(value.studentId);
+            if(student === null) res.status(404).json({ message: "student not found" });
+
+            const examAccessControl = await db.examAccessControls.findOrCreate({
+                where: { applyeeId: value.studentId, examId }
+            });
+
+            examAccessControl.accessControl = value.accessControl;
+            await examAccessControl[0].save();
+
+            res.status(200).json({
+                user: {
+                    id: student.id,
+                    name: student.name,
+                    major: student.major
+                },
+                accessControl: value.accessControl
+            });
+        } catch (err) {
+            next(err);
+        }
+    })
 };

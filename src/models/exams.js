@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
 
     Exams.associate = function(db) {
         db.exams.belongsTo(db.users, { foreignKey: "ownerId", as: "owner" });
+        db.exams.hasMany(db.qnas);
     }
 
     return Exams;

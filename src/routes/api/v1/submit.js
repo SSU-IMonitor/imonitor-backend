@@ -32,7 +32,7 @@ module.exports = (router) => {
                 }
             });
 
-            if (!examAccessControl.isAccepted) res.status(403).json({message: "User is not Accepted"});
+            if (!examAccessControl.accessControl === "ACCEPTED") res.status(403).json({message: "User is not Accepted"});
 
             // return
             const qnas = await db.qnas.findAll({
@@ -85,7 +85,7 @@ module.exports = (router) => {
                 }
             });
 
-            if (!examAccessControl.isAccepted) res.status(403).json({ message: "User is not Accepted"});
+            if (!examAccessControl.accessControl === "ACCEPTED") res.status(403).json({ message: "User is not Accepted"});
 
             const { value, error} = postSubmitRequestValidator.validate(req.body);
             if(error) throw error;

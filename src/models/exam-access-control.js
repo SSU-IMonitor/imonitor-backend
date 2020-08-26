@@ -4,7 +4,7 @@ module.exports = (sequelize, DataTypes) => {
 
     const ExamAccessControls = sequelize.define(modelName, {
         id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-        isAccepted: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false }
+        accessControl: { type: DataTypes.ENUM("UNACCEPTED", "ACCEPTED", "BANNED"), allowNull: false, defaultValue: "UNACCEPTED" }
     }, { tableName, timestamps: false });
 
     ExamAccessControls.associate = function(db) {
