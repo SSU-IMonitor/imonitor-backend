@@ -102,7 +102,7 @@ module.exports = (router) => {
 
             const { limit, offset, search, time, direction } = value;
 
-            let searchOption;
+            let searchOption = {};
             if(search !== undefined) searchOption = {
                 [Op.or]: [
                     {
