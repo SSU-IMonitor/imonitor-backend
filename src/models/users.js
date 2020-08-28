@@ -10,5 +10,8 @@ module.exports = (sequelize, DataTypes) => {
         role: { type: DataTypes.ENUM("APPLIER", "EXAMIER"), allowNull: false, defaultValue: "APPLIER" }
     }, { tableName, timestamps: false });
 
+    Users.associate = function(db) {
+        db.users.belongsToMany(db.exams, { through: db.userExams, as: "exams" });
+    }
     return Users;
 }

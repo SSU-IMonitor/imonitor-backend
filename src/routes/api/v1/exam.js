@@ -34,6 +34,10 @@ const putExamAccessControlRequestValidator = Joi.object({
     accessControl: Joi.string().valid("ACCEPTED", "UNACCEPTED", "BANNED")
 });
 
+const postMyExamRequestValidator = Joi.object({
+    examId: Joi.number().integer()
+});
+
 module.exports = (router) => {
     router.get("/exams/:examId", authorize, async function(req, res, next) {
         try {
@@ -246,4 +250,35 @@ module.exports = (router) => {
             next(err);
         }
     })
+
+    router.post("/users/:userId/exams", authorize, async function(req, res, next) {
+        try{
+            const tokenUserId = res.locals.userId;
+            const userId = req.params.userId;
+
+            const { value, error } = postMyExamRequestValidator.validate(req.body);
+            if(error) throw error;
+
+            const user = await db.users.findByPk(userId);
+            if(user === null) res.status(404).json({ message: "user not found" });
+            const exam = await db.exams.findOne({
+                where: { id: value.examId },
+                include: [ { model: db.users, as: "owner" } ]
+            });
+            if(exam === null) res.status(404).json({ message: "exam not found" });
+            if(tokenUserId !== userId) res.status(403).json({ message: "trying to add other users exam" });
+
+            await user.addExam(exam);
+
+            delete exam.dataValues.ownerId;
+            delete exam.dataValues.owner.dataValues.password;
+            delete exam.dataValues.owner.dataValues.role;
+
+            res.status(200).json({
+                exam
+            });
+        } catch(err) {
+            next(err);
+        }
+    });
 };
