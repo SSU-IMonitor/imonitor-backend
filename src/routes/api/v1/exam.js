@@ -281,4 +281,31 @@ module.exports = (router) => {
             next(err);
         }
     });
+
+    router.get("/users/:userId/exams", authorize, async function(req, res, next) {
+        try{
+            const tokenUserId = res.locals.userId;
+            const userId = req.params.userId;
+
+            const user = await db.users.findByPk(userId);
+            if(user === null) res.status(404).json({ message: "user not found" });
+            if(tokenUserId !== userId) res.status(403).json({ message: "trying to get other users exam" });
+
+            const exams = await user.getExams({
+                include: [{ model: db.users, as: "owner" }]
+            });
+
+            res.status(200).json({
+                exams: exams.map(exam => {
+                    delete exam.dataValues.userExams;
+                    delete exam.dataValues.ownerId;
+                    delete exam.dataValues.owner.dataValues.password;
+                    delete exam.dataValues.owner.dataValues.role;
+                    return exam;
+                })
+            });
+        } catch(err) {
+            next(err);
+        }
+    });
 };
