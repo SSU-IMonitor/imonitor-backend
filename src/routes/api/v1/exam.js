@@ -268,6 +268,11 @@ module.exports = (router) => {
             if(exam === null) res.status(404).json({ message: "exam not found" });
             if(tokenUserId !== userId) res.status(403).json({ message: "trying to add other users exam" });
 
+            const exists = await db.userExams.findOne({
+                where: { userId, examId: exam.id }
+            });
+            if(exists !== null) res.status(409).json({ message: "exam already added" });
+            
             await user.addExam(exam);
 
             delete exam.dataValues.ownerId;
