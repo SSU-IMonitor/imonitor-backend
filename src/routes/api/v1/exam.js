@@ -64,37 +64,40 @@ module.exports = (router) => {
                 }
             });
 
-            if(exam.owner.id !== userId && !examAccessControl.accessControl === "ACCEPTED") res.status(403).json({ message: "User is not Accepted" });
+            if(exam.owner.id !== userId && examAccessControl[0].accessControl !== "ACCEPTED") res.status(403).json({ message: "User is not Accepted" });
 
             res.status(200).json({
-                id: exam.id,
-                owner: {
-                    id: exam.owner.id,
-                    name: exam.owner.name,
-                    major: exam.owner.major
-                },
-                title: exam.title,
-                notice: exam.notice,
-                courseName: exam.courseName,
-                courseCode: exam.courseCode,
-                startTime: exam.startTime,
-                endTime: exam.endTime,
-                questions: exam.qnas.map(qna => {
-                    return {
-                        id: qna.id,
-                        question: qna.question,
-                        type: qna.type,
-                        choices: qna.choices.map(choice => {
-                            return {
-                                id: choice.id,
-                                order: choice.order,
-                                content: choice.content
-                            }
-                        })
-                    }
-                })
-            });
-        } catch (err) {
+		exam: {
+	 		id: exam.id,
+                	owner: {
+                    		id: exam.owner.id,
+                    		name: exam.owner.name,
+                    		major: exam.owner.major
+                	},
+                	title: exam.title,
+                	notice: exam.notice,
+                	courseName: exam.courseName,
+                	courseCode: exam.courseCode,
+                	startTime: exam.startTime,
+                	endTime: exam.endTime,
+                	questions: exam.qnas.map(qna => {
+                    		return {
+                        		id: qna.id,
+                        		question: qna.question,
+                        		type: qna.type,
+                        		choices: qna.choices.map(choice => {
+                            			return {
+                                			id: choice.id,
+                                			order: choice.order,
+                                			content: choice.content
+                            			}
+                        		})
+                    		}
+                	})
+
+		}
+        });
+    } catch (err) {
             next(err);
         }
     });
