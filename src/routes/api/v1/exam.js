@@ -313,4 +313,28 @@ module.exports = (router) => {
             next(err);
         }
     });
+
+    router.delete("/users/:userId/exams/:examId", authorize, async function (req, res, next) {
+        try {
+            const tokenUserId = res.locals.userId;
+            const userId = req.params.userId;
+            const examId = req.params.examId;
+
+            const user = await db.users.findByPk(userId);
+            if(user === null) res.status(404).json({ message: "user not found" });
+            if(tokenUserId != userId) res.status(403).json({ message: "trying to delete another user's exam" });
+            let exams = await user.getExams({
+                include: [{ model: db.users, as: "owner" }]
+            });
+
+            const examExists = exams.filter(exam => exam.dataValues.id == examId).length != 0;
+            if(!examExists) res.status(404).send({ message: "exam not found" });
+
+            await user.setExams(exams.filter(exam => exam.dataValues.id != examId));
+
+            res.status(204).json({});
+        } catch (err) {
+            next(err);
+        }
+    })
 };
