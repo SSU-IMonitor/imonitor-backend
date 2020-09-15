@@ -64,7 +64,22 @@ module.exports = (router) => {
                 }
             });
 
-            if(exam.owner.id !== userId && examAccessControl[0].accessControl !== "ACCEPTED") res.status(403).json({ message: "User is not Accepted" });
+		console.log(exam.owner.id)
+		console.log(userId)
+		console.log(exam.owner.id == userId)
+		console.log(examAccessControl);
+		console.log(examAccessControl[0].dataValues.accessControl)
+            if(exam.owner.id != userId && examAccessControl[0].dataValues.accessControl !== "ACCEPTED") res.status(403).json({ message: "User is not Accepted" });
+
+	    const qnas = await db.qnas.findAll({ where: { examId }});
+	    const exists = await Promise.all(qnas.map(async qna => {
+	    	const submit = await db.submits.findOne({ where: { qnaId: qna.id, applyeeId: userId }});
+		return submit;
+	    }));
+
+            console.log('exam exists')
+	    console.log(exists)
+            const hasSubmitted = exists.some(exist => exist == null);
 
             res.status(200).json({
 		exam: {
@@ -75,6 +90,7 @@ module.exports = (router) => {
                     		major: exam.owner.major
                 	},
                 	title: exam.title,
+			hasSubmitted,
                 	notice: exam.notice,
                 	courseName: exam.courseName,
                 	courseCode: exam.courseCode,
@@ -226,7 +242,6 @@ module.exports = (router) => {
             });
 
             if(exam === null) res.status(404).json({ message: "exam not found" });
-            if(exam.owner.id !== userId) res.status(403).json({ message: "user is not owner of exam" });
 
             const { error, value } = putExamAccessControlRequestValidator.validate(req.body);
             if(error) throw error;
@@ -238,7 +253,9 @@ module.exports = (router) => {
                 where: { applyeeId: value.studentId, examId }
             });
 
-            examAccessControl.accessControl = value.accessControl;
+		console.log('access-control');
+		console.log(value);
+            examAccessControl[0].accessControl = value.accessControl;
             await examAccessControl[0].save();
 
             res.status(200).json({
@@ -325,7 +342,6 @@ module.exports = (router) => {
 
             const user = await db.users.findByPk(userId);
             if(user === null) res.status(404).json({ message: "user not found" });
-            if(tokenUserId != userId) res.status(403).json({ message: "trying to delete another user's exam" });
             let exams = await user.getExams({
                 include: [{ model: db.users, as: "owner" }]
             });

@@ -27,8 +27,7 @@ module.exports = (router) => {
 
             const examAccessControl = await db.examAccessControls.findOrCreate({
                 where: {
-                    examId,
-                    applyeeId: userId
+                    examId
                 }
             });
 
@@ -48,10 +47,13 @@ module.exports = (router) => {
                 ]
             });
 
+		
             res.status(200).json({
-                result: qnas.map(qna => {
+                result: qnas.map((qna, idx) => {
+		    const submittedAnswer = qna.submits.find(submit => submit.dataValues.qnaId == qna.id).submittedAnswer;
+
+			console.log(qna.submits)
                     return {
-                        result: {
                             qna: {
                                 id: qna.id,
                                 question: qna.question,
@@ -59,10 +61,9 @@ module.exports = (router) => {
                                 type: qna.type,
                                 choices: qna.choices
                             },
-                            submittedAnswer: qna.submits.submittedAnswer,
-                            isCorrect: qna.answer === qna.submits.submittedAnswer
+                            submittedAnswer,
+			    isCorrect: qna.answer === submittedAnswer
                         }
-                    }
                 })
             });
         } catch (err) {
@@ -73,25 +74,32 @@ module.exports = (router) => {
     router.post("/exams/:examId/submit", authorize, async function(req, res, next) {
         try {
             const examId = req.params.examId;
-            const tokenUserId = req.params.userId;
+            const tokenUserId = res.locals.userId;
 
             const exam = await db.exams.findByPk(examId);
             if (exam === null) res.status(404).json({message: "exam does not exist "});
 
             const examAccessControl = await db.examAccessControls.findOrCreate({
                 where: {
-                    examId,
-                    applyeeId: tokenUserId
+                    examId
                 }
             });
 
-            if (!examAccessControl.accessControl === "ACCEPTED") res.status(403).json({ message: "User is not Accepted"});
+            if (examAccessControl[0].dataValues.accessControl != "ACCEPTED") res.status(403).json({ message: "User is not Accepted"});
 
             const { value, error} = postSubmitRequestValidator.validate(req.body);
             if(error) throw error;
 
+            const exists = await Promise.all(value.submits.map(async submit => await db.submits.findOne({ where: {qnaId: submit.qnaId, applyeeId: tokenUserId }})));
+
+	    console.log('exists')
+	    console.log(exists)
+	    if(exists.some(exist => exist != null)) throw new Error("user already submitted");
+
             await Promise.all(value.submits.map(async submit => await db.submits.create({
-                    ...submit
+		    submittedAnswer: submit.answer,
+		    qnaId: submit.qnaId,
+		    applyeeId: tokenUserId
             })));
 
             const qnas = await db.qnas.findAll({
@@ -101,16 +109,18 @@ module.exports = (router) => {
                     {
                         model: db.submits,
                         as: "submits",
-                        where: {applyeeId: userId},
+                        where: {applyeeId: tokenUserId},
                         include: [{model: db.users, as: "applyee"}]
                     },
                 ]
             });
 
             res.status(200).json({
-                result: qnas.map(qna => {
+                result: qnas.map((qna, idx) => {
+			console.log(qna)
+		    const submittedAnswer = qna.submits.find(submit => submit.qnaId == qna.id && submit.applyee.id == tokenUserId).answer;
+
                     return {
-                        result: {
                             qna: {
                                 id: qna.id,
                                 question: qna.question,
@@ -118,10 +128,9 @@ module.exports = (router) => {
                                 type: qna.type,
                                 choices: qna.choices
                             },
-                            submittedAnswer: qna.submits.submittedAnswer,
-                            isCorrect: qna.answer === qna.submits.submittedAnswer
+                            submittedAnswer,
+			    isCorrect: qna.answer === submittedAnswer
                         }
-                    }
                 })
             });
         } catch (err) {
